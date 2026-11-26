@@ -1,0 +1,3 @@
+# Keep Linux/macOS install working: shell scripts and the plugin must stay LF.
+*.sh text eol=lf
+plugins/maister-guards/server.js text eol=lf
