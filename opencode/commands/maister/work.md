@@ -2,9 +2,6 @@
 description: Unified entry point — auto-classifies tasks and routes to appropriate workflow. ALWAYS execute when invoked via slash command.
 ---
 
-> Translated from Claude Code (SkillPanel/maister) to OpenCode. Tool mapping: subagent tool + subagent_type → `subagent` tool with `agent: maister/<name>`; Skill tool → `skill` tool with `id: maister-<skill>`; `AskUserQuestion` → `question` tool; `Bash` → `shell` tool; `/maister:xxx` → `/maister/xxx`; `TaskCreate`/`TaskUpdate` → track in `orchestrator-state.yml` + work-log (no native task tool in OpenCode); `EnterPlanMode`/`ExitPlanMode` → use the `plan` agent; `CLAUDE_PLUGIN_ROOT` → local skill directory; `CLAUDE.md` → `AGENTS.md` (OpenCode) — both are updated where possible.
-
-
 **NOTE**: This is a multi-step workflow that invokes the task-classifier subagent and orchestrator skills at specific steps. The `<command-name>` tag refers to THIS command only — you MUST still use the skill tool to invoke those other skills when instructed below. Follow ALL steps in order.
 
 # Unified Work Entry Point
@@ -137,7 +134,7 @@ Options:
 
 ```
 Use skill tool:
-  skill: "maister:[orchestrator-name]"
+  skill: "maister-[orchestrator-name]"
   args: "[task_path] [flags]"
 ```
 
@@ -184,7 +181,7 @@ Display:
   Routing to [task_type] workflow...
 
 Use skill tool:
-  skill: "maister:[orchestrator-name]"
+  skill: "maister-[orchestrator-name]"
   args: "[description]"
 ```
 

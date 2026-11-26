@@ -3,9 +3,6 @@ name: maister-init
 description: Initialize Maister framework with intelligent project analysis and documentation generation
 ---
 
-> Translated from Claude Code (SkillPanel/maister) to OpenCode. Tool mapping: subagent tool + subagent_type → `subagent` tool with `agent: maister/<name>`; Skill tool → `skill` tool with `id: maister-<skill>`; `AskUserQuestion` → `question` tool; `Bash` → `shell` tool; `/maister:xxx` → `/maister/xxx`; `TaskCreate`/`TaskUpdate` → track in `orchestrator-state.yml` + work-log (no native task tool in OpenCode); `EnterPlanMode`/`ExitPlanMode` → use the `plan` agent; `CLAUDE_PLUGIN_ROOT` → local skill directory; `CLAUDE.md` → `AGENTS.md` (OpenCode) — both are updated where possible.
-
-
 # Initialize Maister Framework
 
 Initialize `.maister/docs/` with intelligent project analysis and meaningful documentation generation based on actual codebase inspection.
@@ -25,7 +22,7 @@ Initialize `.maister/docs/` with intelligent project analysis and meaningful doc
 | 7 | Validate | Validating initialization |
 | 8 | Discover coding standards | Discovering coding standards |
 
-**Task Tracking**: Before Phase 1, use `TaskCreate` for all phases (pending), then set sequential dependencies with `TaskUpdate addBlockedBy`. At each phase: `TaskUpdate` to `in_progress` → execute → `TaskUpdate` to `completed`. If skipped (e.g., user selects "Update existing"), mark skipped phases as `completed` with `metadata: {skipped: true}`.
+**Task Tracking**: Before Phase 1, record all phases in `orchestrator-state.yml` (pending, sequential order = execution order; `TaskCreate`/`TaskUpdate` are unavailable in OpenCode). At each phase: mark `in_progress` in state → execute → mark `completed` in state. If skipped (e.g., user selects "Update existing"), mark skipped phases as `completed` with a skip note in state.
 
 ---
 

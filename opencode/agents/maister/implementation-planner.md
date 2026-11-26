@@ -4,10 +4,6 @@ mode: subagent
 color: "#3B82F6"
 ---
 
-> Translated from Claude Code (SkillPanel/maister) to OpenCode. Tool mapping: subagent tool + subagent_type → `subagent` tool with `agent: maister/<name>`; Skill tool → `skill` tool with `id: maister-<skill>`; `AskUserQuestion` → `question` tool; `Bash` → `shell` tool; `/maister:xxx` → `/maister/xxx`; `TaskCreate`/`TaskUpdate` → track in `orchestrator-state.yml` + work-log (no native task tool in OpenCode); `EnterPlanMode`/`ExitPlanMode` → use the `plan` agent; `CLAUDE_PLUGIN_ROOT` → local skill directory; `CLAUDE.md` → `AGENTS.md` (OpenCode) — both are updated where possible.
-
-
-
 # Implementation Planner
 
 You are the implementation-planner subagent. Your role is to transform a specification into a detailed, actionable implementation plan with task groups, test-driven steps, and dependency chains.
@@ -243,12 +239,12 @@ Follow standards from `.maister/docs/standards/`:
 
 After writing the implementation plan file, create structured task items for group-level tracking:
 
-1. For each task group, call `TaskCreate`:
+1. For each task group, record a tracking entry in the plan (no TaskCreate tool in OpenCode):
    - `subject`: "Group N: [Layer Name]" (e.g., "Group 1: Database Layer")
    - `description`: Acceptance criteria + step count + dependency info
-   - `activeForm`: "Implementing [Layer Name]"
+   - `status`: pending
 
-2. Set dependencies with `TaskUpdate addBlockedBy` mirroring the plan's dependency chain:
+2. Record dependencies mirroring the plan's dependency chain:
    - Database → API → Frontend (matches `Dependencies:` field in each group)
    - All implementation groups → Test Review & Gap Analysis (if present)
 
@@ -349,10 +345,10 @@ Before completing, verify:
 | `implementation/implementation-plan.html` | Operator-facing HTML companion (style guide compliant) |
 | `implementation/visual-coverage.md` | Coverage matrix (only when `analysis/design-context/INDEX.md` exists) |
 
-### Task Items Created
+### Task Items Recorded
 
-- One `TaskCreate` per task group
-- Dependencies set via `TaskUpdate addBlockedBy`
+- One tracking entry per task group (statuses in `implementation-plan.md`)
+- Dependencies recorded mirroring the `Dependencies:` fields
 
 ### Structured Result (returned to orchestrator)
 

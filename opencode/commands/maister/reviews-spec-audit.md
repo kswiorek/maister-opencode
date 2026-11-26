@@ -2,9 +2,6 @@
 description: Independent specification audit to verify completeness and clarity before implementation
 ---
 
-> Translated from Claude Code (SkillPanel/maister) to OpenCode. Tool mapping: subagent tool + subagent_type → `subagent` tool with `agent: maister/<name>`; Skill tool → `skill` tool with `id: maister-<skill>`; `AskUserQuestion` → `question` tool; `Bash` → `shell` tool; `/maister:xxx` → `/maister/xxx`; `TaskCreate`/`TaskUpdate` → track in `orchestrator-state.yml` + work-log (no native task tool in OpenCode); `EnterPlanMode`/`ExitPlanMode` → use the `plan` agent; `CLAUDE_PLUGIN_ROOT` → local skill directory; `CLAUDE.md` → `AGENTS.md` (OpenCode) — both are updated where possible.
-
-
 **ACTION REQUIRED**: This command delegates to a different skill. The `<command-name>` tag refers to THIS command, not the target. Call the subagent tool with agent="maister/spec-auditor" NOW. Pass the spec path in the prompt. Do not read files, explore code, or execute workflow steps yourself.
 
 You are running an independent specification audit using the `spec-auditor` agent.

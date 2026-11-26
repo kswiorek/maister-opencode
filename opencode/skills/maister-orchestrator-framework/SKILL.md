@@ -5,9 +5,6 @@ metadata:
   opencode/autoinvoke: false
 ---
 
-> Translated from Claude Code (SkillPanel/maister) to OpenCode. Tool mapping: subagent tool + subagent_type → `subagent` tool with `agent: maister/<name>`; Skill tool → `skill` tool with `id: maister-<skill>`; `AskUserQuestion` → `question` tool; `Bash` → `shell` tool; `/maister:xxx` → `/maister/xxx`; `TaskCreate`/`TaskUpdate` → track in `orchestrator-state.yml` + work-log (no native task tool in OpenCode); `EnterPlanMode`/`ExitPlanMode` → use the `plan` agent; `CLAUDE_PLUGIN_ROOT` → local skill directory; `CLAUDE.md` → `AGENTS.md` (OpenCode) — both are updated where possible.
-
-
 # Orchestrator Framework
 
 This skill provides **shared reference documentation** for all orchestrator skills in the maister plugin. It is NOT an executable skill - orchestrators reference these patterns and implement them for their specific domain.
@@ -50,7 +47,7 @@ All orchestrators follow these principles:
 2. **Resume Capability**: Any orchestrator can be paused and resumed
 3. **Interactive**: Pause after each phase for user review
 4. **User-Confirmed Rollback**: Never auto-rollback without user approval
-5. **Task Progress**: Always track progress with TaskCreate/TaskUpdate tools
+5. **Task Progress**: Always track progress in `orchestrator-state.yml` (TaskCreate/TaskUpdate are unavailable in OpenCode)
 6. **Standards Discovery**: Reference `.maister/docs/INDEX.md` throughout
 
 ## Orchestrators Using This Framework

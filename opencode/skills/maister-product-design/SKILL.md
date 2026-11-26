@@ -3,9 +3,6 @@ name: maister-product-design
 description: Interactive product/feature design orchestrator. Transforms fuzzy ideas into structured product briefs through collaborative exploration, iterative refinement, and visual prototyping. Adaptive phases detect design complexity and adjust depth.
 ---
 
-> Translated from Claude Code (SkillPanel/maister) to OpenCode. Tool mapping: subagent tool + subagent_type → `subagent` tool with `agent: maister/<name>`; Skill tool → `skill` tool with `id: maister-<skill>`; `AskUserQuestion` → `question` tool; `Bash` → `shell` tool; `/maister:xxx` → `/maister/xxx`; `TaskCreate`/`TaskUpdate` → track in `orchestrator-state.yml` + work-log (no native task tool in OpenCode); `EnterPlanMode`/`ExitPlanMode` → use the `plan` agent; `CLAUDE_PLUGIN_ROOT` → local skill directory; `CLAUDE.md` → `AGENTS.md` (OpenCode) — both are updated where possible.
-
-
 # Product Design Orchestrator
 
 Interactive workflow for product and feature design -- from fuzzy idea to development-ready product brief. Phases adapt based on detected design characteristics (greenfield vs enhancement, simple vs complex, UI-focused vs backend). Uses a hybrid interaction architecture: agents for unbiased generative work, inline interactive phases for convergent and evaluative work. Visual companion renders HTML/CSS mockups in a browser for rich design feedback.
@@ -45,7 +42,7 @@ Full framework rule: `../maister-orchestrator-framework/references/orchestrator-
 ### Step 3: Initialize Workflow
 
 1. **Capture the clock**: run `date -u +"%Y-%m-%dT%H:%M:%SZ"` via shell NOW — you do NOT know the time from context. Every timestamp written this turn (`created`, `updated`, `generated`, `phases[].started`) uses this value. Date-only or `T00:00:00Z` values are the documented failure mode (orchestrator-patterns.md § 4 Timestamp Rule). Re-run `date` in later turns before writing timestamps.
-2. **Create Task Items**: Use `TaskCreate` for all phases (see Phase Configuration), then set dependencies with `TaskUpdate addBlockedBy`
+2. **Record phases in state**: `TaskCreate`/`TaskUpdate` are unavailable in OpenCode — record `task_ids: {}` and treat `orchestrator-state.yml` as the sole phase tracker; execution order follows the Phase Configuration table below
 3. **Create Task Directory**: `.maister/tasks/product-design/YYYY-MM-DD-task-name/`
    - Create `context/` folder with `README.md` instructing users to drop relevant files there (meeting transcripts, existing designs, spreadsheets, docs, PDFs, images)
    - Create `analysis/` and `outputs/` directories
@@ -243,7 +240,7 @@ question — "I detected these design characteristics. Please confirm or correct
 
 ### Phase 1: Context Synthesis
 
-> **Phase gate**: Confirm Phase 0 completion in this conversation. If you cannot point to its call ID, STOP and fire that gate now. State updates (`completed_phases`, `TaskUpdate`) without a corresponding `question` call are protocol violations — never paper over a missed gate by updating state.
+> **Phase gate**: Confirm Phase 0 completion in this conversation. If you cannot point to its call ID, STOP and fire that gate now. State updates (`completed_phases`) without a corresponding `question` call are protocol violations — never paper over a missed gate by updating state.
 
 **Purpose**: Synthesize ALL context sources into a unified design context document that informs all downstream phases
 **Execute**: Skill/Agent + Direct (adapts based on characteristics)
@@ -292,7 +289,7 @@ Delegate codebase analysis to the `maister-codebase-analyzer` skill rather than 
 
 ### Phase 2: Problem Exploration
 
-> **Phase gate**: Confirm Phase 1 completion in this conversation. If you cannot point to its call ID, STOP and fire that gate now. State updates (`completed_phases`, `TaskUpdate`) without a corresponding `question` call are protocol violations — never paper over a missed gate by updating state.
+> **Phase gate**: Confirm Phase 1 completion in this conversation. If you cannot point to its call ID, STOP and fire that gate now. State updates (`completed_phases`) without a corresponding `question` call are protocol violations — never paper over a missed gate by updating state.
 
 **Purpose**: Explore the problem space through structured questioning to produce a refined problem statement, constraints, and success criteria
 **Execute**: Direct, inline, interactive
@@ -344,7 +341,7 @@ question — "Problem space explored." Read `next_phase` from `orchestrator-stat
 
 ### Phase 3: User & Persona Exploration
 
-> **Phase entry self-check**: Before executing this phase, locate the `question` tool call from Phase 2 in this conversation. If you cannot point to its call ID, STOP and fire that gate now. State updates (`completed_phases`, `TaskUpdate`) without a corresponding `question` call are protocol violations — never paper over a missed gate by updating state.
+> **Phase entry self-check**: Before executing this phase, locate the `question` tool call from Phase 2 in this conversation. If you cannot point to its call ID, STOP and fire that gate now. State updates (`completed_phases`) without a corresponding `question` call are protocol violations — never paper over a missed gate by updating state.
 
 **Purpose**: Develop persona cards and user journeys for the design
 **Execute**: Direct, inline, interactive
@@ -388,7 +385,7 @@ question — "Personas defined. Continue to Idea Generation?"
 
 ### Phase 4: Idea Generation
 
-> **Phase entry self-check**: Before executing this phase, locate the `question` tool call from the preceding phase (Phase 3 if ran, or Phase 2) in this conversation. If you cannot point to its call ID, STOP and fire that gate now. State updates (`completed_phases`, `TaskUpdate`) without a corresponding `question` call are protocol violations — never paper over a missed gate by updating state.
+> **Phase entry self-check**: Before executing this phase, locate the `question` tool call from the preceding phase (Phase 3 if ran, or Phase 2) in this conversation. If you cannot point to its call ID, STOP and fire that gate now. State updates (`completed_phases`) without a corresponding `question` call are protocol violations — never paper over a missed gate by updating state.
 
 **Purpose**: Generate unbiased design alternatives using the solution-brainstormer agent
 **Execute**: Agent via subagent tool (deliberately non-interactive to avoid anchoring bias)
@@ -477,7 +474,7 @@ question — "Design direction approved. Continue to Feature Specification?"
 
 ### Phase 6: Feature Specification
 
-> **Phase entry self-check**: Before executing this phase, locate the `question` tool call from Phase 5 in this conversation. If you cannot point to its call ID, STOP and fire that gate now. State updates (`completed_phases`, `TaskUpdate`) without a corresponding `question` call are protocol violations — never paper over a missed gate by updating state.
+> **Phase entry self-check**: Before executing this phase, locate the `question` tool call from Phase 5 in this conversation. If you cannot point to its call ID, STOP and fire that gate now. State updates (`completed_phases`) without a corresponding `question` call are protocol violations — never paper over a missed gate by updating state.
 
 **Purpose**: Build a complete feature specification section-by-section using propose-and-refine
 **Execute**: Direct, inline, interactive
@@ -550,7 +547,7 @@ question — "Specification complete." Read `next_phase` from `orchestrator-stat
 
 ### Phase 7: Visual Prototyping
 
-> **Phase entry self-check**: Before executing this phase, locate the `question` tool call from Phase 6 in this conversation. If you cannot point to its call ID, STOP and fire that gate now. State updates (`completed_phases`, `TaskUpdate`) without a corresponding `question` call are protocol violations — never paper over a missed gate by updating state.
+> **Phase entry self-check**: Before executing this phase, locate the `question` tool call from Phase 6 in this conversation. If you cannot point to its call ID, STOP and fire that gate now. State updates (`completed_phases`) without a corresponding `question` call are protocol violations — never paper over a missed gate by updating state.
 
 **Purpose**: Generate visual mockups (HTML/CSS via the visual companion or ASCII fallback) for UI-focused designs
 **Execute**: skill tool - `maister-mockup-studio`
@@ -581,7 +578,7 @@ question — "Visual prototyping complete. Continue to Review & Handoff?"
 
 ### Phase 8: Review & Handoff
 
-> **Phase entry self-check**: Before executing this phase, locate the `question` tool call from the preceding phase in this conversation. If you cannot point to its call ID, STOP and fire that gate now. State updates (`completed_phases`, `TaskUpdate`) without a corresponding `question` call are protocol violations — never paper over a missed gate by updating state.
+> **Phase entry self-check**: Before executing this phase, locate the `question` tool call from the preceding phase in this conversation. If you cannot point to its call ID, STOP and fire that gate now. State updates (`completed_phases`) without a corresponding `question` call are protocol violations — never paper over a missed gate by updating state.
 
 **Purpose**: Assemble the layered product brief, present for final approval, suggest development handoff
 **Execute**: Direct, inline, interactive

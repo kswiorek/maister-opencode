@@ -61,7 +61,7 @@ For all analysis, planning, implementation, and verification phases: **ALWAYS DE
 
 All orchestrators pause at `→ MANDATORY GATE` transitions for user review and prompt for optional phases.
 
-**State ordering rule**: Phase state MUST NOT be updated to 'completed' (via orchestrator-state.yml or TaskUpdate) until AFTER the user responds to the exit gate. Correct sequence: finish phase work → call question → receive user response → update state to completed.
+**State ordering rule**: Phase state MUST NOT be updated to 'completed' (in orchestrator-state.yml) until AFTER the user responds to the exit gate. Correct sequence: finish phase work → call question → receive user response → update state to completed.
 
 ### Phase Gates Override Permission Modes
 
@@ -110,7 +110,7 @@ When a phase ends with `→ **AUTO-CONTINUE**`:
 | Saying "I'll pause here" without tool call | Words are not pauses. Tool invocation required. |
 | Auto-accepting subagent decisions without asking | User must consent to scope/approach decisions |
 | Outputting a summary after phase work, then ending turn before reaching `→ MANDATORY GATE` | Gate is skipped; user loses control at the most critical review point. The gate must be the FIRST action after phase work completes — no summaries, no output before it. |
-| Marking phase as completed (state/TaskUpdate) before the exit gate executes | State corruption — downstream phases see false "completed" status. Gate → user response → state update. Never reverse this order. |
+| Marking phase as completed (state) before the exit gate executes | State corruption — downstream phases see false "completed" status. Gate → user response → state update. Never reverse this order. |
 | "Auto mode / acceptEdits / bypassPermissions is on, so I'll skip the gate to minimize questions" | The orchestrator's phase gates are an explicit stated boundary that overrides auto mode's "minimize clarifying questions" instruction. Gates fire in every permission mode. See § 2 "Phase Gates Override Permission Modes". |
 | "The subagent works autonomously, so the orchestrator should too" | Subagents have no user channel; the orchestrator IS the user channel. Conflating the two removes all user visibility. |
 | Treating an empty `decisions_needed` as license to skip the phase exit gate | The DECISION GATE (mandatory-when-decisions-exist) and the phase exit `→ MANDATORY GATE` (mandatory-always) are separate. Empty `decisions_needed` only skips the former. |
@@ -249,7 +249,7 @@ orchestrator:
   updated: [ISO 8601 timestamp]
   task_path: .maister/tasks/[type]/YYYY-MM-DD-task-name
 
-  # Task tracking IDs (maps phase names to TaskCreate IDs)
+  # Task tracking IDs (maps phase names to TaskCreate IDs; always empty in OpenCode — state is the sole tracker)
   task_ids:
     phase-1: null
     phase-2: null
@@ -343,7 +343,7 @@ phase_summaries:
 5. **Create task directory**: `.maister/tasks/<type>/<YYYY-MM-DD-slug>/` plus the subdirectories this workflow owns — each SKILL.md names its own; there is no structure shared by all five workflows *(skip on resume)*
 6. **Create state file**: `orchestrator-state.yml` *(skip on resume)*
 7. **Set up operator dashboard** (§ 8) — *skip this entire step when `options.html_output` is false*: copy `../assets/dashboard.html` (sibling `assets/` directory of this references/ file) to the task root as `dashboard.html`, write the initial `dashboard-data.js`, then **auto-open it in the user's browser** with the platform opener — `open "[abs-task-path]/dashboard.html"` (macOS), `xdg-open` (Linux), `start ""` (Windows). Pass the **plain absolute filesystem path — NEVER construct a `file://` URL** (hand-built URLs get mangled, e.g. `file///` missing the colon; the opener resolves plain paths itself). If the command fails, just print the path hint — never block initialization. On resume: re-copy `dashboard.html` only if missing; regenerate `dashboard-data.js` from state; then auto-open it in the browser again (same opener as a new task — if the tab is already open the OS focuses it rather than duplicating).
-8. **Create task items**: `TaskCreate` for all phases, then `TaskUpdate addBlockedBy` for dependencies. On resume, also restore completed phase statuses. When `TaskCreate`/`TaskUpdate` are unavailable in the session, record `task_ids: {}` and treat `orchestrator-state.yml` as the sole phase tracker; every other step is unchanged.
+8. **Record phases in state**: `TaskCreate`/`TaskUpdate` are unavailable in OpenCode — record `task_ids: {}` and treat `orchestrator-state.yml` as the sole phase tracker; every other step is unchanged. On resume, completed phase statuses come from state alone (no restoration step needed).
 9. **Output summary**: Show task info, phases, starting message — include the dashboard path hint `Dashboard: open [task-path]/dashboard.html in a browser to monitor progress` *only when `options.html_output` is true*.
 
 ### Task Name Generation
@@ -356,12 +356,10 @@ Examples: "Fix login timeout bug" → `2025-12-17-fix-login-timeout`
 
 ### Task Restoration on Resume
 
-Task system IDs are ephemeral to a session. On resume:
+There is no separate task system in OpenCode — phase statuses live only in `orchestrator-state.yml`. On resume:
 
-1. Create all phase tasks (same `TaskCreate` loop, all start pending)
-2. Set dependencies (same `TaskUpdate addBlockedBy`)
-3. Mark completed phases (`TaskUpdate` to `completed` with `metadata: {restored: true}`)
-4. Update state with new task IDs
+1. Read the state file; completed phases stay completed
+2. No restoration step is needed — state is the tracker
 
 ### Resume Logic
 
@@ -449,7 +447,7 @@ Workflow artifacts accumulate deep detail for subagent context — but the human
 Each task directory carries a self-contained HTML dashboard so the operator can monitor workflow progress at a glance and deep-dive only when needed.
 
 **Files** (both at task root):
-- `dashboard.html` — static viewer, copied verbatim from `[plugin]/skills/orchestrator-framework/assets/dashboard.html` at initialization (§ 5). NEVER generated or modified by the model — it is a maintained plugin asset.
+- `dashboard.html` — static viewer, copied verbatim from `[plugin]/skills/maister-orchestrator-framework/assets/dashboard.html` at initialization (§ 5). NEVER generated or modified by the model — it is a maintained plugin asset.
 - `dashboard-data.js` — data projection written by the orchestrator. The viewer reads it via `<script>` (`window.MAISTER_DATA = {...}`), so it works from `file://` with no server.
 
 **Every rewrite starts with the clock**: run `date -u +"%Y-%m-%dT%H:%M:%SZ"` via shell before writing (one call covers all timestamps in the same turn) — `generated`, `started`, `completed`, and state `updated` all take that value. Never guess the time, never reuse a value from an earlier turn (§ 4 Timestamp Rule).

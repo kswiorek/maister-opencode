@@ -3,9 +3,6 @@ name: maister-performance
 description: Orchestrates performance optimization workflows using static code analysis to identify bottlenecks (N+1 queries, missing indexes, O(n^2) algorithms, blocking I/O, memory leaks). Accepts optional user-provided profiling data. Reuses standard specification, planning, implementation, and verification phases.
 ---
 
-> Translated from Claude Code (SkillPanel/maister) to OpenCode. Tool mapping: subagent tool + subagent_type → `subagent` tool with `agent: maister/<name>`; Skill tool → `skill` tool with `id: maister-<skill>`; `AskUserQuestion` → `question` tool; `Bash` → `shell` tool; `/maister:xxx` → `/maister/xxx`; `TaskCreate`/`TaskUpdate` → track in `orchestrator-state.yml` + work-log (no native task tool in OpenCode); `EnterPlanMode`/`ExitPlanMode` → use the `plan` agent; `CLAUDE_PLUGIN_ROOT` → local skill directory; `CLAUDE.md` → `AGENTS.md` (OpenCode) — both are updated where possible.
-
-
 # Performance Orchestrator
 
 Static-analysis-first performance optimization workflow. Identifies bottlenecks by reading code, then uses the standard specification/planning/implementation/verification pipeline to fix them.
@@ -33,7 +30,7 @@ Full framework rule: `../maister-orchestrator-framework/references/orchestrator-
 ### Step 2: Initialize Workflow
 
 1. **Capture the clock**: run `date -u +"%Y-%m-%dT%H:%M:%SZ"` via shell NOW — you do NOT know the time from context. Every timestamp written this turn (`created`, `updated`, `generated`, `phases[].started`) uses this value. Date-only or `T00:00:00Z` values are the documented failure mode (orchestrator-patterns.md § 4 Timestamp Rule). Re-run `date` in later turns before writing timestamps.
-2. **Create Task Items**: Use `TaskCreate` for all phases (see Phase Configuration), then set dependencies with `TaskUpdate addBlockedBy`
+2. **Record phases in state**: `TaskCreate`/`TaskUpdate` are unavailable in OpenCode — record `task_ids: {}` and treat `orchestrator-state.yml` as the sole phase tracker; execution order follows the Phase Configuration table below
 3. **Create Task Directory**: `.maister/tasks/performance/YYYY-MM-DD-task-name/`
 4. **Create Subdirectories**: `analysis/`, `analysis/user-profiling-data/`, `implementation/`, `verification/`
 5. **Initialize State**: Create `orchestrator-state.yml` with performance context
@@ -156,7 +153,7 @@ question - "Performance analysis complete. [N] bottlenecks identified ([P0 count
 
 ### Phase 3: Requirements & Specification
 
-> **Phase entry self-check**: Before executing this phase, locate the `question` tool call from Phase 2 in this conversation. If you cannot point to its call ID, STOP and fire that gate now. State updates (`completed_phases`, `TaskUpdate`) without a corresponding `question` call are protocol violations — never paper over a missed gate by updating state.
+> **Phase entry self-check**: Before executing this phase, locate the `question` tool call from Phase 2 in this conversation. If you cannot point to its call ID, STOP and fire that gate now. State updates (`completed_phases`) without a corresponding `question` call are protocol violations — never paper over a missed gate by updating state.
 
 **Purpose**: Gather optimization requirements and create specification
 **Output**: `analysis/requirements.md`, `implementation/spec.md`
@@ -191,7 +188,7 @@ question - Display executive summary before asking. Read `implementation/spec.md
 
 ### Phase 4: Specification Audit (Conditional)
 
-> **Phase entry self-check**: Before executing this phase, locate the `question` tool call from Phase 3 in this conversation. If you cannot point to its call ID, STOP and fire that gate now. State updates (`completed_phases`, `TaskUpdate`) without a corresponding `question` call are protocol violations — never paper over a missed gate by updating state.
+> **Phase entry self-check**: Before executing this phase, locate the `question` tool call from Phase 3 in this conversation. If you cannot point to its call ID, STOP and fire that gate now. State updates (`completed_phases`) without a corresponding `question` call are protocol violations — never paper over a missed gate by updating state.
 
 **Purpose**: Independent review of optimization specification
 **Execute**: subagent tool - `maister/spec-auditor` subagent
@@ -211,7 +208,7 @@ question - Display executive summary before asking. Read `verification/spec-audi
 
 ### Phase 5: Implementation Planning
 
-> **Phase entry self-check**: Before executing this phase, locate the `question` tool call from Phase 4 in this conversation. If you cannot point to its call ID, STOP and fire that gate now. State updates (`completed_phases`, `TaskUpdate`) without a corresponding `question` call are protocol violations — never paper over a missed gate by updating state.
+> **Phase entry self-check**: Before executing this phase, locate the `question` tool call from Phase 4 in this conversation. If you cannot point to its call ID, STOP and fire that gate now. State updates (`completed_phases`) without a corresponding `question` call are protocol violations — never paper over a missed gate by updating state.
 
 **Purpose**: Break optimization specification into implementation steps
 
@@ -235,7 +232,7 @@ question - Display executive summary before asking. Read `implementation/impleme
 
 ### Phase 6: Implementation
 
-> **Phase entry self-check**: Before executing this phase, locate the `question` tool call from Phase 5 in this conversation. If you cannot point to its call ID, STOP and fire that gate now. State updates (`completed_phases`, `TaskUpdate`) without a corresponding `question` call are protocol violations — never paper over a missed gate by updating state.
+> **Phase entry self-check**: Before executing this phase, locate the `question` tool call from Phase 5 in this conversation. If you cannot point to its call ID, STOP and fire that gate now. State updates (`completed_phases`) without a corresponding `question` call are protocol violations — never paper over a missed gate by updating state.
 
 **Purpose**: Execute the optimization plan
 
@@ -263,7 +260,7 @@ question - Display executive summary before asking. Extract from `phase_summarie
 
 ### Phase 7: Verification Options
 
-> **Phase entry self-check**: Before executing this phase, locate the `question` tool call from Phase 6 in this conversation. If you cannot point to its call ID, STOP and fire that gate now. State updates (`completed_phases`, `TaskUpdate`) without a corresponding `question` call are protocol violations — never paper over a missed gate by updating state.
+> **Phase entry self-check**: Before executing this phase, locate the `question` tool call from Phase 6 in this conversation. If you cannot point to its call ID, STOP and fire that gate now. State updates (`completed_phases`) without a corresponding `question` call are protocol violations — never paper over a missed gate by updating state.
 
 **Purpose**: Determine which verification checks to run
 **Execute**: Direct - use question for options
@@ -285,7 +282,7 @@ question - "Options selected. Continue to Phase 8?"
 
 ### Phase 8: Verification & Issue Resolution
 
-> **Phase entry self-check**: Before executing this phase, locate the `question` tool call from Phase 7 in this conversation. If you cannot point to its call ID, STOP and fire that gate now. State updates (`completed_phases`, `TaskUpdate`) without a corresponding `question` call are protocol violations — never paper over a missed gate by updating state.
+> **Phase entry self-check**: Before executing this phase, locate the `question` tool call from Phase 7 in this conversation. If you cannot point to its call ID, STOP and fire that gate now. State updates (`completed_phases`) without a corresponding `question` call are protocol violations — never paper over a missed gate by updating state.
 
 **Purpose**: Comprehensive implementation verification with user-driven fix cycles
 **Output**: `verification/implementation-verification.md`, optional review reports
@@ -317,7 +314,7 @@ question - Display executive summary: total issues found, issues fixed, issues r
 
 ### Phase 9: Finalization
 
-> **Phase entry self-check**: Before executing this phase, locate the `question` tool call from Phase 8 in this conversation. If you cannot point to its call ID, STOP and fire that gate now. State updates (`completed_phases`, `TaskUpdate`) without a corresponding `question` call are protocol violations — never paper over a missed gate by updating state.
+> **Phase entry self-check**: Before executing this phase, locate the `question` tool call from Phase 8 in this conversation. If you cannot point to its call ID, STOP and fire that gate now. State updates (`completed_phases`) without a corresponding `question` call are protocol violations — never paper over a missed gate by updating state.
 
 **Purpose**: Complete workflow and provide next steps
 **Execute**: Direct - create summary, update state, guide commit

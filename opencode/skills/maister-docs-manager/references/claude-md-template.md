@@ -1,6 +1,6 @@
-# AGENTS.md Documentation Section Template
+# CLAUDE.md Documentation Section Template
 
-Add this section to the project's `AGENTS.md` file. Place it prominently near the top. Verify the INDEX.md path is correct and the file exists before adding.
+Add this section to the project's `CLAUDE.md` file. Place it prominently near the top. Verify the INDEX.md path is correct and the file exists before adding.
 
 ```markdown
 ## Project Documentation & Standards
@@ -19,9 +19,9 @@ When you notice recurring patterns, fixes, or conventions during implementation 
 - The same type of fix is needed across multiple files
 - A new library/pattern is adopted that should be documented
 
-When this happens, briefly suggest the standard to the user. If approved, invoke `/maister/standards-update` with the identified pattern.
+When this happens, briefly suggest the standard to the user. If approved, invoke `/maister:standards-update` (Claude Code) or `/maister/standards-update` (OpenCode) with the identified pattern.
 
 ## Maister Workflows
 
-This project uses the maister plugin for structured development workflows. When any `/maister:*` command is invoked, execute it via the skill tool immediately — do not skip workflows for "straightforward" tasks. The user chose the workflow intentionally; complexity assessment is the workflow's job.
+This project uses the maister plugin for structured development workflows. When any `/maister:*` (Claude Code) or `/maister/*` (OpenCode) command is invoked, execute it via the Skill tool (Claude Code) or skill tool (OpenCode) immediately — do not skip workflows for "straightforward" tasks. The user chose the workflow intentionally; complexity assessment is the workflow's job.
 ```

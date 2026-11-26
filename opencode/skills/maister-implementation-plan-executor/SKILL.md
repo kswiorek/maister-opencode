@@ -5,9 +5,6 @@ metadata:
   opencode/autoinvoke: false
 ---
 
-> Translated from Claude Code (SkillPanel/maister) to OpenCode. Tool mapping: subagent tool + subagent_type → `subagent` tool with `agent: maister/<name>`; Skill tool → `skill` tool with `id: maister-<skill>`; `AskUserQuestion` → `question` tool; `Bash` → `shell` tool; `/maister:xxx` → `/maister/xxx`; `TaskCreate`/`TaskUpdate` → track in `orchestrator-state.yml` + work-log (no native task tool in OpenCode); `EnterPlanMode`/`ExitPlanMode` → use the `plan` agent; `CLAUDE_PLUGIN_ROOT` → local skill directory; `CLAUDE.md` → `AGENTS.md` (OpenCode) — both are updated where possible.
-
-
 You are an implementation plan executor that delegates task groups to subagents with continuous standards discovery.
 
 ## Core Principles
@@ -39,7 +36,7 @@ Every task group is executed by the `maister/task-group-implementer` subagent, h
    - `implementation/implementation-plan.md` (required)
    - `implementation/spec.md` (recommended)
    - `.maister/docs/INDEX.md` (required for standards)
-3. **Check for task group items**: Call `TaskList` to find existing task group items from the planner. If found, use them. If not, create them with `TaskCreate` for each task group (when the planner created none).
+3. **Check for task group items**: Look in `implementation-plan.md` and `work-log.md` for existing task group items from the planner. If found, use them. If not, derive them from the plan's task groups (when the planner created none).
 4. **Regenerate `dashboard-data.js`** from `orchestrator-state.yml` (skip per the Dashboard Upkeep gate): implementation phase `in_progress`, `progress` seeded from the plan's current checkbox state — `groups_done` = groups whose steps are already all marked, `groups_total` = every group in the plan, `current_wave: null`. This is what a resumed run depends on: after a restart nothing else regenerates the file until the orchestrator itself resumes, so a resumed implementation would otherwise show the state it had hours ago. On a fresh run it simply writes `groups_done: 0`.
 5. **Initialize work-log.md**:
    ```markdown
@@ -84,7 +81,7 @@ Never assume missing `Files to Modify` means "None" — silent disjoint assumpti
 
 For each wave:
 
-0. For every group in the wave, `TaskUpdate` to `status: "in_progress"` with `owner: "maister/task-group-implementer"`.
+0. For every group in the wave, record `status: "in_progress"` for the group in `work-log.md` before dispatching its `maister/task-group-implementer` subagent.
 
 1. **Prepare group context** (per group):
    - Extract group content from `implementation-plan.md` (including `Visual References` section, if present)
@@ -119,7 +116,7 @@ For each wave:
      (Linux: `sed -i` without `''`. The leading quote in `data-step="N\.` anchors the exact group — group 1 cannot match 11.) Then VERIFY: `grep -c 'data-group="N" class="group done"'` must return 1; if 0, append a warning to `work-log.md` (`HTML plan sync missed markers for Group N`) — a visible miss, never a silent one. File absent → skip silently; sync never blocks the wave.
    - Add a group entry to `work-log.md` with standards trail.
    - Verify test results are acceptable.
-   - `TaskUpdate` to `status: "completed"` with `metadata: {completed_at, tests_passed, files_modified, standards_applied, wave: N}`.
+   - Record `status: "completed"` for the group in `work-log.md` with `{completed_at, tests_passed, files_modified, standards_applied, wave: N}`.
 
    Then, once every member of the wave has been processed, **rewrite `dashboard-data.js`** (skip per the Dashboard Upkeep gate) with the wave's outcome: the implementation phase's `progress.groups_done` raised by the groups that completed, `current_wave` set to this wave's number, and any group the failure-recovery path below skipped or reverted appended to `progress.skipped` / `progress.reverted` with a one-line reason. One rewrite per wave, not one per group.
 
@@ -354,7 +351,7 @@ After each task group:
    - No `- [ ]` checkboxes remain
    - All groups have work-log entries
    - Standards Reading Log is complete
-   - All group tasks are `completed` via `TaskList` (cross-validate against markdown checkboxes)
+   - All group tasks are `completed` in `work-log.md` (cross-validate against markdown checkboxes in `implementation-plan.md`)
 
 2. **Run full project test suite** (all tests, not just feature tests — catches regressions in unrelated areas). When the project's instructions restrict local full-suite runs (for example, CI-only), run what they allow instead and record the suite as `not run locally` — never as passed.
 

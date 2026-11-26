@@ -3,9 +3,6 @@ name: maister-mockup-studio
 description: Generates UI mockups (rendered HTML/CSS via a browser visual companion, or terminal ASCII). Discovers and binds to the project's frontend/UI/UX resources (standards, design system, available design skills). Invoked standalone by users, or by the development and product-design orchestrators as their mockup-generation step.
 ---
 
-> Translated from Claude Code (SkillPanel/maister) to OpenCode. Tool mapping: subagent tool + subagent_type → `subagent` tool with `agent: maister/<name>`; Skill tool → `skill` tool with `id: maister-<skill>`; `AskUserQuestion` → `question` tool; `Bash` → `shell` tool; `/maister:xxx` → `/maister/xxx`; `TaskCreate`/`TaskUpdate` → track in `orchestrator-state.yml` + work-log (no native task tool in OpenCode); `EnterPlanMode`/`ExitPlanMode` → use the `plan` agent; `CLAUDE_PLUGIN_ROOT` → local skill directory; `CLAUDE.md` → `AGENTS.md` (OpenCode) — both are updated where possible.
-
-
 # Mockup Studio
 
 The single, reusable engine for generating UI mockups in the maister plugin. It runs in the **main agent context** (not a subagent), so it can start a local visual-companion server (shell), open a browser (Playwright MCP), and run interactive `question` refinement gates.

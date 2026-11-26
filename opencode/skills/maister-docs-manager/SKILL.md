@@ -1,12 +1,9 @@
 ---
 name: maister-docs-manager
-description: "Internal engine for managing project documentation and technical standards in .maister/docs/. Handles file operations, INDEX.md generation, and CLAUDE.md integration. Invoked by maister:init, standards-update, and standards-discover skills."
+description: "\"Internal engine for managing project documentation and technical standards in .maister/docs/. Handles file operations, INDEX.md generation, and AGENTS.md + CLAUDE.md integration. Invoked by maister-init, standards-update, and standards-discover skills.\""
 metadata:
   opencode/autoinvoke: false
 ---
-
-> Translated from Claude Code (SkillPanel/maister) to OpenCode. Tool mapping: subagent tool + subagent_type → `subagent` tool with `agent: maister/<name>`; Skill tool → `skill` tool with `id: maister-<skill>`; `AskUserQuestion` → `question` tool; `Bash` → `shell` tool; `/maister:xxx` → `/maister/xxx`; `TaskCreate`/`TaskUpdate` → track in `orchestrator-state.yml` + work-log (no native task tool in OpenCode); `EnterPlanMode`/`ExitPlanMode` → use the `plan` agent; `CLAUDE_PLUGIN_ROOT` → local skill directory; `CLAUDE.md` → `AGENTS.md` (OpenCode) — both are updated where possible.
-
 
 # Documentation Manager (Internal Engine)
 
@@ -16,7 +13,7 @@ Internal skill that manages documentation file operations in `.maister/docs/`. N
 
 - **Project documentation is source of truth** — plugin-bundled docs are baseline/reference only
 - **INDEX.md is the master map** — always kept up-to-date after changes
-- **AGENTS.md integration is mandatory** — ensures AI reads documentation
+- **AGENTS.md + CLAUDE.md integration is mandatory** — ensures AI reads documentation
 
 ## Documentation Structure
 
@@ -78,7 +75,7 @@ This skill bundles the following resources within the plugin:
 
 - **Plugin bundles** (read-only baseline): This skill's `docs/` subdirectory within the plugin
 - **Project documentation** (source of truth): `.maister/docs/` in the project root
-- **Project configuration**: `AGENTS.md` in the project root
+- **Project configuration**: `AGENTS.md` (OpenCode) and `CLAUDE.md` (Claude Code) in the project root (same section in both)
 
 ## Capabilities
 
@@ -120,9 +117,9 @@ Use this when a project doesn't have `.maister/docs/` or needs documentation for
      - *Add them manually using the docs-manager skill*
      - *Run `/maister/standards-discover --scope=frontend` to auto-discover*
      ```
-6. **MANDATORY - Update AGENTS.md:**
-   - Check if `AGENTS.md` exists in the project root; if not, ask the user if they want to create it
-   - Add the documentation reference section (see "Manage AGENTS.md Integration" operation)
+6. **MANDATORY - Update AGENTS.md and CLAUDE.md (same section in both):**
+   - Check if `AGENTS.md` and `CLAUDE.md` exist in the project root; for each missing file, ask the user if they want to create it
+   - Add the documentation reference section to both files (see "Manage AGENTS.md + CLAUDE.md Integration" operation)
    - Ensure it emphasizes reading INDEX.md at the beginning of any task
 7. Inform the caller about the documentation structure created
 
@@ -135,7 +132,7 @@ Use this when a project doesn't have `.maister/docs/` or needs documentation for
   - If provided: Copy standards from this path instead of the bundled defaults
   - If omitted: Copy from this skill's bundled `docs/standards/` directory (default behavior)
 
-**Result:** The project now has baseline documentation in `.maister/docs/`, a comprehensive INDEX.md, and AGENTS.md integration that ensures AI assistance is documentation-aware. Only selected standard categories are initialized.
+**Result:** The project now has baseline documentation in `.maister/docs/`, a comprehensive INDEX.md, and AGENTS.md + CLAUDE.md integration that ensures AI assistance is documentation-aware. Only selected standard categories are initialized.
 
 **Important:** After this initial setup, the project's documentation becomes the source of truth. Teams should customize it for their specific needs.
 
@@ -158,7 +155,7 @@ Use this to create or update the INDEX.md file that serves as the master documen
 3. Read `references/index-md-template.md` for the INDEX.md structure template
 4. Generate INDEX.md by populating the template with discovered files and descriptions
 5. Write the generated INDEX.md to `.maister/docs/INDEX.md`
-6. Verify that AGENTS.md references this index (see "Manage AGENTS.md Integration" operation)
+6. Verify that both files reference this index (see "Manage AGENTS.md + CLAUDE.md Integration" operation)
 
 **Result:** A comprehensive, up-to-date INDEX.md that provides a clear map of all project documentation.
 
@@ -203,7 +200,7 @@ Use this to help the user update or modify existing project documentation.
    - Or offer to help them create custom documentation from scratch
 5. After updating:
    - Check if INDEX.md needs updating (if the purpose/description changed significantly)
-   - If updating tech-stack.md or architecture.md, suggest reviewing AGENTS.md for consistency
+   - If updating tech-stack.md or architecture.md, suggest reviewing both root files for consistency
 6. For technical standards:
    - If a corresponding Claude Code Skill exists, suggest reviewing it for consistency
    - Standards should align with actual code patterns in the project
@@ -228,7 +225,7 @@ Use this when a team wants to see the plugin's baseline documentation for refere
 6. If the user chooses to copy any documentation:
    - Copy the selected files from this skill's bundled `docs/` directory to the project's `.maister/docs/` directory
    - Update INDEX.md to reflect any changes
-   - Review AGENTS.md for any necessary updates
+   - Review both root files for any necessary updates
 
 **Important:** This operation should be used rarely, mainly when a team wants to reset to baseline. Project documentation is the source of truth and should be maintained by the team.
 
@@ -248,29 +245,29 @@ Use this to show what documentation is bundled with this plugin and their instal
    - Show installation status (bundled only, installed, or customized)
    - If installed, show whether it differs from the baseline (customized)
 3. Show whether INDEX.md exists and is up-to-date
-4. Show whether AGENTS.md has documentation integration
+4. Show whether each root file has documentation integration
 5. Remind the user that plugin documentation is baseline/reference only, and project documentation (if installed) is the source of truth
 
 **Result:** The user sees a complete inventory of available baseline documentation and their installation status in the current project.
 
 ---
 
-### 7. Manage AGENTS.md Integration
+### 7. Manage AGENTS.md + CLAUDE.md Integration
 
-Use this to ensure the project's AGENTS.md properly integrates with the documentation system, encouraging AI to read and use the documentation.
+Use this to ensure the project's AGENTS.md and CLAUDE.md properly integrate with the documentation system, encouraging AI to read and use the documentation.
 
 **What to do:**
-1. Check if `AGENTS.md` exists in the project root
-2. If it doesn't exist, ask the user if they want to create it
-3. Look for a documentation reference section in AGENTS.md
+1. Check if `AGENTS.md` and `CLAUDE.md` exist in the project root
+2. For each missing file, ask the user if they want to create it
+3. Look for a documentation reference section in each file
 4. If the section doesn't exist or is incomplete:
    - Read `references/claude-md-template.md` for the template
-   - Add the template section to AGENTS.md
-5. Ensure the documentation section is placed prominently in AGENTS.md (near the top)
+   - Add the template section to each file missing it
+5. Ensure the documentation section is placed prominently in both files (near the top)
 6. Verify that the INDEX.md path is correct and the file exists
 7. If `.maister/docs/` doesn't exist, suggest running the initialization operation first
 
-**Result:** AGENTS.md properly integrates with the documentation system, ensuring AI assistance is documentation-aware and follows team conventions.
+**Result:** Both files properly integrate with the documentation system, ensuring AI assistance is documentation-aware and follows team conventions.
 
 ---
 
@@ -287,8 +284,8 @@ Use this to check that documentation is consistent, up-to-date, and properly int
    - Check that all files in `.maister/docs/` are listed in INDEX.md
    - Check that all files listed in INDEX.md actually exist
    - Report any orphaned files or broken references
-3. **Check AGENTS.md integration:**
-   - Verify AGENTS.md exists
+3. **Check root-file integration:**
+   - Verify both root files exist
    - Verify it contains documentation reference section
    - Verify it uses valid file reference format: @.maister/docs/INDEX.md (with @ prefix, without backticks)
    - Warn if using incorrect formats like `.maister/docs/INDEX.md` or `@.maister/docs/INDEX.md` (backticks)
@@ -307,7 +304,7 @@ Use this to check that documentation is consistent, up-to-date, and properly int
 7. **Offer to fix issues:**
    - Ask if the user wants to automatically fix found issues
    - Fix missing INDEX.md entries
-   - Fix missing AGENTS.md integration
+   - Fix missing integration in either file
    - Create missing directory structure
 
 **Result:** A comprehensive validation report with optional automatic fixes for common issues.
@@ -319,7 +316,7 @@ Use this to check that documentation is consistent, up-to-date, and properly int
 **Initialize documentation in a new project:**
 ```
 User: "Set up documentation for this project"
-Claude: [Executes Initialize Documentation - creates structure, copies baseline docs, generates INDEX.md, updates AGENTS.md, gathers project info]
+Claude: [Executes Initialize Documentation - creates structure, copies baseline docs, generates INDEX.md, updates both root files, gathers project info]
 ```
 
 **Update project vision:**
@@ -343,7 +340,7 @@ Claude: [Executes Use Plugin Documentation as Reference - shows plugin baseline,
 **Validate documentation:**
 ```
 User: "Check if our documentation is complete and consistent"
-Claude: [Executes Validate Documentation Consistency - checks structure, INDEX.md, AGENTS.md integration, generates report]
+Claude: [Executes Validate Documentation Consistency - checks structure, INDEX.md, both-files integration, generates report]
 ```
 
 **Manage INDEX.md:**
@@ -358,7 +355,7 @@ Claude: [Executes Manage INDEX.md - scans .maister/docs/, regenerates comprehens
 
 - **Project documentation is source of truth** — plugin-bundled docs are baseline/reference only
 - **INDEX.md must stay current** — regenerate after any documentation change
-- **AGENTS.md integration is mandatory** — ensures AI reads documentation at task start
+- **AGENTS.md + CLAUDE.md integration is mandatory** — ensures AI reads documentation at task start
 - **This skill is an internal engine** — called by maister-init, standards-update, and standards-discover. Not directly user-invocable.
 - **CRITICAL: Return control after completion** — This is an internal sub-skill. After completing the requested operation, return control to the calling workflow. Do NOT treat completion of this skill as the end of the conversation turn — the parent skill has more steps to execute.
 

@@ -3,9 +3,6 @@ name: maister-research
 description: Orchestrates comprehensive research workflows from question definition through findings documentation. Handles technical, requirements, literature, and mixed research types with adaptive methodology, multi-source gathering, pattern synthesis, and evidence-based reporting. Supports standalone research tasks and embedded research phase in other workflows.
 ---
 
-> Translated from Claude Code (SkillPanel/maister) to OpenCode. Tool mapping: subagent tool + subagent_type → `subagent` tool with `agent: maister/<name>`; Skill tool → `skill` tool with `id: maister-<skill>`; `AskUserQuestion` → `question` tool; `Bash` → `shell` tool; `/maister:xxx` → `/maister/xxx`; `TaskCreate`/`TaskUpdate` → track in `orchestrator-state.yml` + work-log (no native task tool in OpenCode); `EnterPlanMode`/`ExitPlanMode` → use the `plan` agent; `CLAUDE_PLUGIN_ROOT` → local skill directory; `CLAUDE.md` → `AGENTS.md` (OpenCode) — both are updated where possible.
-
-
 # Research Orchestrator
 
 Systematic research workflow from question definition to evidence-based documentation.
@@ -33,7 +30,7 @@ Full framework rule: `../maister-orchestrator-framework/references/orchestrator-
 ### Step 2: Initialize Workflow
 
 1. **Capture the clock**: run `date -u +"%Y-%m-%dT%H:%M:%SZ"` via shell NOW — you do NOT know the time from context. Every timestamp written this turn (`created`, `updated`, `generated`, `phases[].started`) uses this value. Date-only or `T00:00:00Z` values are the documented failure mode (orchestrator-patterns.md § 4 Timestamp Rule). Re-run `date` in later turns before writing timestamps.
-2. **Create Task Items**: Use `TaskCreate` for all phases (see Phase Configuration), then set dependencies with `TaskUpdate addBlockedBy`
+2. **Record phases in state**: `TaskCreate`/`TaskUpdate` are unavailable in OpenCode — record `task_ids: {}` and treat `orchestrator-state.yml` as the sole phase tracker; execution order follows the Phase Configuration table below
 3. **Create Task Directory**: `.maister/tasks/research/YYYY-MM-DD-task-name/`
 4. **Initialize State**: Create `orchestrator-state.yml` with research context
 5. **Set up Operator Dashboard** (orchestrator-patterns.md § 8) — first read `.maister/config.yml` and set `orchestrator.options.html_output` (default true if the file/key is absent). **When `html_output` is false, SKIP this entire step** — no `dashboard.html`, no `dashboard-data.js`, no browser auto-open — and proceed. Otherwise: copy `../maister-orchestrator-framework/assets/dashboard.html` to the task root as `dashboard.html`, write the initial `dashboard-data.js` (all phases pending, `task.type: "research"`), then **auto-open it in the user's browser** (`open` / `xdg-open` / `start` per platform, passing the plain absolute filesystem path — NEVER a hand-built `file://` URL; on failure just print the path — never block). On resume: re-copy `dashboard.html` only if missing; regenerate `dashboard-data.js` from state; then auto-open it in the browser again (same opener as a new task — the OS focuses an already-open tab rather than duplicating).
@@ -204,7 +201,7 @@ question - "Research foundation complete (initialized, planned, gathered, synthe
 
 ### Phase 2: Optional Phases Decision
 
-> **Phase entry self-check**: Before executing this phase, locate the `question` tool call from Phase 1 in this conversation. If you cannot point to its call ID, STOP and fire that gate now. State updates (`completed_phases`, `TaskUpdate`) without a corresponding `question` call are protocol violations — never paper over a missed gate by updating state.
+> **Phase entry self-check**: Before executing this phase, locate the `question` tool call from Phase 1 in this conversation. If you cannot point to its call ID, STOP and fire that gate now. State updates (`completed_phases`) without a corresponding `question` call are protocol violations — never paper over a missed gate by updating state.
 
 **Purpose**: Evaluate whether brainstorming and/or design phases would be valuable (independently)
 **Execute**: Direct
@@ -308,7 +305,7 @@ question - "Brainstorming complete. Continue to high-level design?"
 
 ### Phase 5: High-Level Design
 
-> **Phase entry self-check**: Before executing this phase, locate the `question` tool call from the preceding phase in this conversation. If you cannot point to its call ID, STOP and fire that gate now. State updates (`completed_phases`, `TaskUpdate`) without a corresponding `question` call are protocol violations — never paper over a missed gate by updating state.
+> **Phase entry self-check**: Before executing this phase, locate the `question` tool call from the preceding phase in this conversation. If you cannot point to its call ID, STOP and fire that gate now. State updates (`completed_phases`) without a corresponding `question` call are protocol violations — never paper over a missed gate by updating state.
 
 **Purpose**: Create architecture design from selected solution approach
 **Execute**: Orchestrator-Direct Hybrid
@@ -357,7 +354,7 @@ question - "Design complete. Continue to output generation?"
 
 ### Phase 6: Completion
 
-> **Phase entry self-check**: Before executing this phase, locate the `question` tool call from the preceding phase in this conversation. If you cannot point to its call ID, STOP and fire that gate now. State updates (`completed_phases`, `TaskUpdate`) without a corresponding `question` call are protocol violations — never paper over a missed gate by updating state.
+> **Phase entry self-check**: Before executing this phase, locate the `question` tool call from the preceding phase in this conversation. If you cannot point to its call ID, STOP and fire that gate now. State updates (`completed_phases`) without a corresponding `question` call are protocol violations — never paper over a missed gate by updating state.
 
 **Purpose**: Summarize research results and suggest next steps
 **Execute**: Direct

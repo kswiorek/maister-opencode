@@ -5,9 +5,6 @@ metadata:
   opencode/autoinvoke: false
 ---
 
-> Translated from Claude Code (SkillPanel/maister) to OpenCode. Tool mapping: subagent tool + subagent_type → `subagent` tool with `agent: maister/<name>`; Skill tool → `skill` tool with `id: maister-<skill>`; `AskUserQuestion` → `question` tool; `Bash` → `shell` tool; `/maister:xxx` → `/maister/xxx`; `TaskCreate`/`TaskUpdate` → track in `orchestrator-state.yml` + work-log (no native task tool in OpenCode); `EnterPlanMode`/`ExitPlanMode` → use the `plan` agent; `CLAUDE_PLUGIN_ROOT` → local skill directory; `CLAUDE.md` → `AGENTS.md` (OpenCode) — both are updated where possible.
-
-
 You are an implementation verifier that orchestrates comprehensive quality assurance on completed implementations by delegating to specialized subagents.
 
 ## Core Principle
@@ -71,15 +68,15 @@ This skill owns the dashboard for the duration of the verification phase, includ
    - `implementation/work-log.md` (required)
 3. **Read docs/INDEX.md** to understand available standards
 4. **Determine invocation context** (orchestrator or standalone)
-5. **Create task items for verification tracking** using `TaskCreate` tool:
-   - Subject: "Completeness check", activeForm: "Checking implementation completeness"
-   - Subject: "Test suite", activeForm: "Running test suite" — only if NOT skip_test_suite. When skip_test_suite is true, create task pre-completed with `metadata: {skipped: true, reason: "Full test suite passed during implementation phase"}`
-   - Subject: "Code review", activeForm: "Running code review" — only if code_review_enabled
-   - Subject: "Pragmatic review", activeForm: "Running pragmatic review" — only if pragmatic_review_enabled
-   - Subject: "Production readiness", activeForm: "Checking production readiness" — only if production_check_enabled
-   - Subject: "Reality assessment", activeForm: "Running reality assessment" — only if reality_check_enabled
-   - Subject: "Compile report", activeForm: "Compiling verification report"
-6. **Set dependencies** using `TaskUpdate` with `addBlockedBy`: "Compile report" blocked by ALL verification tasks above
+5. **Track verification items** in `orchestrator-state.yml` (no TaskCreate tool in OpenCode):
+   - Subject: "Completeness check"
+   - Subject: "Test suite" — only if NOT skip_test_suite. When skip_test_suite is true, mark pre-completed with a skip note in state
+   - Subject: "Code review" — only if code_review_enabled
+   - Subject: "Pragmatic review" — only if pragmatic_review_enabled
+   - Subject: "Production readiness" — only if production_check_enabled
+   - Subject: "Reality assessment" — only if reality_check_enabled
+   - Subject: "Compile report"
+6. **Order**: "Compile report" runs after ALL verification tasks above
 7. **Rewrite `dashboard-data.js`** (skip per the Dashboard Upkeep gate): verification phase `in_progress`, `verification.status` set to the cycle about to run. On a re-verification cycle this is what clears the previous cycle's picture before new results land.
 
 If prerequisites missing, report and stop.
@@ -96,13 +93,13 @@ All analysis is delegated: tests → test-suite-runner; plan/standards/docs comp
 
 1. **Check invocation context** for each optional review:
    - If orchestrator mode AND option is `true`: Include in verification (mandatory)
-   - If orchestrator mode AND option is `false`: Skip (mark task as completed with `metadata: {skipped: true}`)
+   - If orchestrator mode AND option is `false`: Skip (mark completed with a skip note in state)
    - If orchestrator mode AND option is `null`: Warn and prompt user
    - If standalone mode: Prompt user with question
 
 ### Step 2: Set all tasks to in_progress
 
-2. Use `TaskUpdate` to set ALL enabled verification tasks to `status: "in_progress"`. For skipped optional reviews, use `TaskUpdate` with `status: "completed"` and `metadata: {"skipped": true}`.
+2. Mark ALL enabled verification tasks `status: "in_progress"` in state. Mark skipped optional reviews `completed` with a skip note in state.
 
 ### Step 3a: Run test suite (sequential, if NOT skip_test_suite)
 
@@ -153,7 +150,7 @@ subagent tool call (if reality_check_enabled):
 ### Step 4: Process all results
 
 After ALL subagents return:
-1. Use `TaskUpdate` to set each verification task to `status: "completed"`
+1. Mark each verification task `status: "completed"` in state
 2. Extract status, issues, and findings from each
 3. **Confirm each report reached disk**: every enabled review owes the file at the `report_path` you passed it. Check them; for each one missing, record an issue with `source: "artifacts"`, `severity: "warning"`, naming the agent that owed it and the path, and say plainly in the compiled report that its findings are the subagent's reply transcribed rather than its own artifact. Never let a transcription pass silently for the artifact — that substitution is the defect this check exists to surface.
 4. Aggregate issue counts
@@ -170,7 +167,7 @@ After ALL subagents return:
 
 ## Phase 3: Compile Verification Report
 
-Use `TaskUpdate` to set "Compile report" task to `status: "in_progress"`.
+Mark "Compile report" `status: "in_progress"` in state.
 
 1. **Compile all findings** from Phase 2
 2. **Determine overall status**:
@@ -212,7 +209,7 @@ Use `TaskUpdate` to set "Compile report" task to `status: "in_progress"`.
    - Never block on it: if generation fails, keep the md, note the miss, continue
 5. **Verify your own artifacts before closing the phase**: `implementation-verification.md` must exist on disk, and so must its `.html` companion whenever `orchestrator.options.html_output` is true. A missing companion is never silent — record it as an issue with `source: "artifacts"`, `severity: "warning"`, leave `html_path: null`, and name the miss in the Phase 5 summary. It still never blocks the verdict (§ 9 "never block"): the point is that the miss is visible, not that the run stops.
 6. **Rewrite `dashboard-data.js`** (skip per the Dashboard Upkeep gate) with this cycle's outcome: `verification.status`, `issues` (original severity retained, `fixed: true` on the ones fixed), `fixes`, and `reverify_count`. Register the report and its companion in the verification phase's `artifacts`. This is the dashboard counterpart of the **Re-verification rule** above: the canonical report and the dashboard are rewritten together on every cycle, so the dashboard's issue counts can never outlive the verdict they came from.
-7. Use `TaskUpdate` to set "Compile report" task to `status: "completed"`
+7. Mark "Compile report" `status: "completed"` in state
 
 ---
 
