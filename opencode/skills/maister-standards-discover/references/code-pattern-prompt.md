@@ -14,7 +14,7 @@ For performance, sample rather than exhaustive analysis:
 - **Backend files**: Sample up to 50 files (`*.py`, `*.rb`, `*.java`, `*.go`, `*.rs`)
 - **Test files**: Sample up to 30 files (`*.test.*`, `*.spec.*`, `*_test.*`)
 
-Use Glob to find files, then Read a representative sample from different directories.
+Use Glob to find files, then Read a representative sample from different directories. Include hidden files when relevant (OpenCode: glob `hidden: true`; Claude Code: explicit `.*` patterns) so dotfile configs are not missed.
 
 ## Patterns to Detect
 

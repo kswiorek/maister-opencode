@@ -336,6 +336,7 @@ phase_summaries:
 
 ### Initialization Steps
 
+> **Hidden directories**: `.maister` starts with a dot — a wildcard listing (`*` at the project root) never shows dotfiles, so a bare `*` will never reveal it. Always address `.maister/...` by explicit path (read, edit, and grep resolve explicit dot-paths normally). When you must *enumerate* dotfiles or dot-directories with glob (e.g. sweeping config files like `.eslintrc`, `.github/`), include them explicitly: OpenCode `glob` needs `hidden: true`; Claude Code needs explicit `.*` patterns.
 1. **Parse arguments**: Extract description, type, entry point (`--from`), optional flags
 2. **Determine starting phase**: New task starts Phase 1; resume reads state for first incomplete phase
 3. **Capture the clock**: run `date -u +"%Y-%m-%dT%H:%M:%SZ"` via shell NOW — you do NOT know the time from context. Use the result for every timestamp written in this turn (`created`, `updated`, `generated`, `phases[].started`). This is a MANDATORY step, not optional: writing `created: 2026-06-12` or `T00:00:00Z` without having run `date` is the documented failure mode (§ 4 Timestamp Rule).

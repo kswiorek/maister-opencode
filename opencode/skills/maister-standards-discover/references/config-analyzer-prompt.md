@@ -4,7 +4,7 @@ Analyze project configuration files to discover coding standards and conventions
 
 ## Task
 
-Find and analyze configuration files, extract standards, return structured findings as YAML.
+Find and analyze configuration files, extract standards, return structured findings as YAML. Most of these are dotfiles — glob for them by explicit name (e.g. `**/.eslintrc*`), or in OpenCode set the glob `hidden` flag to true; a bare `*` sweep hides dotfiles (Claude Code: use explicit `.*` patterns).
 
 ## Configuration Files to Analyze
 
